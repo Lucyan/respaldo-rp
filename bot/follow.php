@@ -3,7 +3,8 @@
 
 require('config.php');
 require('ambiente.php');
-include('twitter.php');
+require_once 'Twitter.php';
+use \TijsVerkoyen\Twitter\Twitter;
 
 if ($ambiente != 0) {
     $log = "------------------------------------------------------------------------\n";
@@ -96,7 +97,8 @@ while ($bot = mysql_fetch_assoc($bots)) {
                 if ($ambiente != 0) {
                     $log .= "-----------------\nPagina: " . $pagina . "\n";
                 }
-                $buscados = $twitter->search($query_tw_palabra, null, null, 100, $pagina, null, null, $geo, true, null);
+                //$buscados = $twitter->search($query_tw_palabra, null, null, 100, $pagina, null, null, $geo, true, null);
+                $buscados = $twitter->searchTweets($query_tw_palabra, $geo, null, null, null, 100, null, null, null, null);
 
                 if ($ambiente != 0) {
                     $log .= "Palabra Indice: " . $palabra_indice . "\n";
