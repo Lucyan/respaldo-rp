@@ -1,7 +1,9 @@
 <?php
 require('config.php');
 require('ambiente.php');
-include('twitter.php');
+require_once 'Exception.php';
+require_once 'Twitter.php';
+use \TijsVerkoyen\Twitter\Twitter;
 
 if ($ambiente != 0) {
     $log = "------------------------------------------------------------------------\n";
@@ -37,7 +39,15 @@ while ($bot = mysql_fetch_assoc($bots)) {
         }
         
         try {
-            if ($twitter->friendshipsExists($row['tw_usuario_id'], $bot['tw_cuenta'])) {
+
+            $friendshipsLookup = $twitter->friendshipsLookup(array($row['tw_usuario_id']), null);
+
+            if ($ambiente != 0) {
+                $log .= "////////////// amistad:\n";
+                $log .= print_r($friendshipsLookup, true);
+            }
+
+            if (in_array('followed_by', $friendshipsLookup[0]['connections'])) {
                 mysql_query("UPDATE tweets SET estado = 2 WHERE id = '{$row['id']}'");
                 $qry_cont = mysql_query("SELECT * FROM bots WHERE id = '{$bot['id']}'");
                 while ($bot_cont = mysql_fetch_assoc($qry_cont)) {
@@ -53,13 +63,19 @@ while ($bot = mysql_fetch_assoc($bots)) {
                 if ($ambiente != 0) {
                     $log .= "Usuario: @" . $row['tw_usuario'] . " no sigue a la cuenta, verificando...\n";
                 }
-                if ($twitter->friendshipsExists($bot['tw_cuenta'], $row['tw_usuario_id'])) {
+                if (in_array('following', $friendshipsLookup[0]['connections']) || in_array('following_requested', $friendshipsLookup[0]['connections'])) {
                     //mysql_query("UPDATE twitter SET estado = 1 WHERE id = {$row['id']}");
                     if ($ambiente != 0) {
                         $log .= "La cuenta sigue al usuario @" . $row['tw_usuario'] . ", destruyendo amistad...\n";
                     }
                     try {
-                        $twitter->friendshipsDestroy($row['tw_usuario_id']);
+                        $destroy = $twitter->friendshipsDestroy(array($row['tw_usuario_id']), null);
+
+                        if ($ambiente != 0) {
+                            $log .= "////////////// amistad destruida:\n";
+                            $log .= print_r($destroy, true);
+                        }
+
                         mysql_query("UPDATE tweets SET estado = 4 WHERE id = {$row['id']}");
                         $qry_cont = mysql_query("SELECT * FROM bots WHERE id = '{$bot['id']}'");
                         while ($bot_cont = mysql_fetch_assoc($qry_cont)) {
